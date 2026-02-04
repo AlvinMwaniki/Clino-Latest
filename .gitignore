@@ -1,0 +1,17 @@
+<<<<<<< HEAD
+/node_modules
+/back_end/node_modules
+/back_end/.env
+/front_end/.env
+/front_end/node_modules
+/front_end/build
+/front_end/node_modules
+/front_end/.env
+/front_end/build
+/front_end/node_modules
+/front_end/.env
+=======
+node_modules/
+.env
+>>>>>>> 27fb6a828c4777fbda6ae654467109bbc2de8752
+/.vs
