@@ -44,7 +44,7 @@ const colorClasses = {
 };
 
 export default function StatCard({
-    icon: Icon,
+    
     title,
     value,
     color = 'green',

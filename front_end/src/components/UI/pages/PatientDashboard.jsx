@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState } from 'react';
-import useAuthStore from '../store/useAuthStore';
+import useAuthStore from "../../../store/useAuthStore";
 import { useNavigate } from 'react-router-dom';
 import { Calendar, HeartPulse, Stethoscope, Pill, Activity, Ambulance, Star, ClipboardList } from 'lucide-react';
 

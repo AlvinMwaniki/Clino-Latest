@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { LogIn, HeartPulse } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import useAuthStore from '../store/useAuthStore';
-
+import useAuthStore from "../../../store/useAuthStore.js";
 export default function Login() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');

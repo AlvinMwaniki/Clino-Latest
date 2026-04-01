@@ -1,50 +1,63 @@
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 require('dotenv').config();
-require('./config/db'); // connect DB
+require('./config/db');
 
 const app = express();
 
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "http://localhost:5173");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
-
-  // Check for the "Preflight" request
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-  next();
-});
+// ── CORS ────────────────────────────────────────────────────────────────────
 app.use(cors({
-  origin: ['http://localhost:8082', 'https://your-cloudflare-link.trycloudflare.com'],
+  origin: ['http://localhost:5173', 'http://localhost:8082'],
   credentials: true
 }));
+
 app.use(express.json());
 
+// ── ROUTES (public) ─────────────────────────────────────────────────────────
+const userRoutes = require('./routes/userRoutes'); // login is public
+app.use('/api/users', userRoutes);
+
+// ── ROUTES (protected — all require valid JWT) ──────────────────────────────
+const { authenticate } = require('./middleware/authMiddleware');
+const { auditLog } = require('./middleware/auditMiddleware');
 
 const pharmacyRoutes = require('./routes/pharmacy_routes');
 const labRoutes = require('./routes/lab_routes');
 const doctorRoutes = require('./routes/doctorRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
-const appoint_patient_routes=require('./routes/app_pateint_router');
-const userRoutes = require('./routes/userRoutes');
+const apptPatientRoutes = require('./routes/app_pateint_router');
 const patientRoutes = require('./routes/patient_routes');
+const billingRoutes = require('./routes/billingRoutes');
+const ambulanceRoutes = require('./routes/ambulanceRoutes');
+const prescriptionRoutes = require('./routes/prescriptionRoutes');
+const wardRoutes = require('./routes/wardRoutes');
+const auditRoutes = require('./routes/auditRoutes');
+const mpesaRoutes = require('./routes/mpesaRoutes');
+const smsRoutes = require('./routes/smsRoutes');
 
-app.use('/api/appoint_patients',appoint_patient_routes);
-app.use('/api/pharmacy', pharmacyRoutes);
-app.use('/api/lab', labRoutes);
-app.use('/api/doctors', doctorRoutes);
-app.use('/api/appointments', appointmentRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/patients', patientRoutes);
-app.get('/', (req, res) => {
-    res.send("🚀 MediSoft Backend Running");
+// Apply auth + audit to all protected routes
+app.use('/api/pharmacy', authenticate, auditLog, pharmacyRoutes);
+app.use('/api/lab', authenticate, auditLog, labRoutes);
+app.use('/api/doctors', authenticate, auditLog, doctorRoutes);
+app.use('/api/appointments', authenticate, auditLog, appointmentRoutes);
+app.use('/api/appoint_patients', authenticate, apptPatientRoutes);
+app.use('/api/patients', authenticate, auditLog, patientRoutes);
+app.use('/api/billing', authenticate, auditLog, billingRoutes);
+app.use('/api/ambulances', authenticate, auditLog, ambulanceRoutes);
+app.use('/api/prescriptions', authenticate, auditLog, prescriptionRoutes);
+app.use('/api/wards', authenticate, auditLog, wardRoutes);
+app.use('/api/audit', authenticate, auditRoutes);
+app.use('/api/mpesa', authenticate, mpesaRoutes);
+app.use('/api/sms', authenticate, smsRoutes);
+
+// ── HEALTH CHECK ─────────────────────────────────────────────────────────────
+app.get('/', (req, res) => res.send('🚀 MediSoft Backend Running'));
+
+// ── GLOBAL ERROR HANDLER ─────────────────────────────────────────────────────
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ message: 'Internal server error', error: err.message });
 });
 
-
-const PORT = 5001; // Was 5000
-app.listen(PORT, () => {
-  console.log(`🚀 Server started on http://localhost:${PORT}`);
-});
+const PORT = process.env.PORT || 5001;
+app.listen(PORT, () => console.log(`🚀 Server started on http://localhost:${PORT}`));

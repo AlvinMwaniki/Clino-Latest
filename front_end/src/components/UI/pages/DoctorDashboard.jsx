@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Calendar, Stethoscope, User, ClipboardList, Activity, Pill, Ambulance, Clock, CheckCircle, AlertCircle } from 'lucide-react';
-import Layout from '../components/Layout/Layout';
-import DataTable from '../components/UI/DataTable';
-import useAuthStore from '../store/useAuthStore';
+import Layout from "../../Layout/Layout.jsx";
+import DataTable from "../DataTable.jsx";
+import useAuthStore from "../../../store/useAuthStore";
 
 // --- SUB-COMPONENTS (Defined outside to prevent re-renders) ---
 

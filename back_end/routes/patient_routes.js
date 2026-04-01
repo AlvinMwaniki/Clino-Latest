@@ -1,17 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const patientController = require('../controller/patientController');
-router.post('/register', patientController.registerPatient);
-// Get total patient count
-router.get('/stats/total', patientController.getTotalPatientsCount);
+const patientController = require('../controller/patientController'); // FIX: was missing
+const { authenticate, authorize } = require('../middleware/authMiddleware');
 
-// Get patients admitted today
-router.get('/stats/today', patientController.getTodayAdmittedPatients);
-
-router.get('/stats/critical', patientController.getCriticalPatientsCount);
-
-// Get all patients
-router.get('/', patientController.getAllPatients);
-router.get('/critical-list', patientController.getCriticalPatients);
+// All patient routes require authentication
+router.post('/register', authenticate, authorize('admin'), patientController.registerPatient);
+router.get('/stats/total', authenticate, patientController.getTotalPatientsCount);
+router.get('/stats/today', authenticate, patientController.getTodayAdmittedPatients);
+router.get('/stats/critical', authenticate, patientController.getCriticalPatientsCount);
+router.get('/critical-list', authenticate, patientController.getCriticalPatients);
+router.get('/', authenticate, patientController.getAllPatients);
 
 module.exports = router;

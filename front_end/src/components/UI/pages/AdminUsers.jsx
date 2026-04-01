@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import Layout from '../components/Layout/Layout';
-import Table from '../components/UI/Table';
+import Layout from "../../Layout/Layout.jsx";
+import Table from "../Table.jsx";
 
 const columns = [
     { header: 'Username', accessor: 'username' },

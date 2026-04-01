@@ -1,142 +1,98 @@
+﻿// ═══════════════════════════════════════════════
+// FILE: src/components/UI/pages/AdminDoctors.jsx
+// ═══════════════════════════════════════════════
 import { useEffect, useState } from 'react';
-import Layout from '../components/Layout/Layout';
-import Table from '../components/UI/Table';
+import Layout from '../../Layout/Layout';
+import Table from '../Table';
+import { api } from '../../../utils/api';
 
 const columns = [
-    { header: 'Doctor ID', accessor: 'doctor_id' },
-    { header: 'Full Name', accessor: 'full_name' },
-    { header: 'Specialization', accessor: 'specialization' },
-    { header: 'Availability', accessor: 'availability_schedule' },
-    { header: 'Feedback Score', accessor: 'feedback_score' },
+  { header: 'Doctor ID', accessor: 'doctor_id' },
+  { header: 'Full Name', accessor: 'full_name' },
+  { header: 'Specialization', accessor: 'specialization' },
+  { header: 'Availability', accessor: 'availability_schedule' },
+  { header: 'Feedback Score', accessor: 'feedback_score' },
 ];
 
+const INITIAL_FORM = {
+  username: '', password_hash: '', confirm_password: '',
+  full_name: '', role: 'doctor', email: '', phone: '',
+  specialization: '', availability_schedule: '', feedback_score: 0
+};
+
 export default function AdminDoctors() {
-    const [doctors, setDoctors] = useState([]);
-    const [loading, setLoading] = useState(true);
+  const [doctors, setDoctors] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState(INITIAL_FORM);
+  const [error, setError] = useState('');
 
-  const [formData, setFormData] = useState({
-    // Users Table Fields
-    username: '',
-    password_hash: '', // We'll send the raw password, backend will hash it
-    confirm_password: '',
-    full_name: '',
-    role: 'doctor',    // This is mandatory for your Users table
-    email: '',
-    phone: '',
-
-    // Doctors Table Fields
-    specialization: '',
-    availability_schedule: '',
-    feedback_score: 0   // Default starting score
-  });
+  useEffect(() => { fetchDoctors(); }, []);
 
   const fetchDoctors = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/doctors');
-      const data = await res.json();
+      const data = await api.get('/doctors');
       setDoctors(data);
-    } catch {
-      setDoctors([]);
-    }
-    setLoading(false);
+    } catch { setDoctors([]); }
+    finally { setLoading(false); }
   };
-  useEffect(() => {
-    fetchDoctors();
-  }, []);
+
+  const set = (field) => (e) => setFormData(prev => ({ ...prev, [field]: e.target.value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    setError('');
     if (formData.password_hash !== formData.confirm_password) {
-      alert("Passwords do not match!");
-      return;
+      setError('Passwords do not match'); return;
     }
-
     try {
-      const res = await fetch('/api/doctors/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData) // Sends all fields (role, specialization, etc.)
-      });
-
-      if (res.ok) {
-        alert("Success: User and Doctor records created!");
-        setShowForm(false);
-        fetchDoctors();
-      } else {
-        const err = await res.json();
-        alert(`Error: ${err.message}`);
-      }
-    } catch (error) {
-      console.error("Submission error:", error);
-    }
+      await api.post('/doctors/register', formData);
+      setShowForm(false);
+      setFormData(INITIAL_FORM);
+      fetchDoctors();
+    } catch (err) { setError(err.message); }
   };
-
-    useEffect(() => {
-        async function fetchDoctors() {
-            setLoading(true);
-            try {
-              const res = await fetch('/api/doctors');
-                const data = await res.json();
-                setDoctors(data);
-            } catch {
-                setDoctors([]);
-            }
-            setLoading(false);
-        }
-        fetchDoctors();
-    }, []);
 
   return (
     <Layout>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Doctors Management</h1>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-2200"
-        >
+        <h1 className="text-2xl font-bold text-gray-800">Doctors Management</h1>
+        <button onClick={() => { setShowForm(!showForm); setError(''); }}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
           {showForm ? 'Cancel' : '+ Add New Doctor'}
         </button>
       </div>
 
       {showForm && (
-        <div className="bg-white p-6 rounded-xl shadow-md border border-green-100 mb-8">
-          <h2 className="text-lg font-semibold mb-4 text-green-700">Add New Doctor (User & Doctor Tables)</h2>
+        <div className="bg-white p-6 rounded-xl shadow-md border border-blue-100 mb-8">
+          <h2 className="text-lg font-semibold mb-4 text-blue-700">Register New Doctor</h2>
+          {error && <p className="text-red-600 text-sm mb-4 bg-red-50 p-2 rounded">{error}</p>}
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-            {/* --- USERS TABLE FIELDS --- */}
-            <div className="space-y-4 border-r pr-4">
-              <p className="text-xs font-bold text-blue-600 uppercase">Users Table Data</p>
-              <input type="text" placeholder="Full Name" required className="w-full p-2 border rounded" onChange={e => setFormData({ ...formData, full_name: e.target.value })} />
-              <input type="text" placeholder="Username" required className="w-full p-2 border rounded" onChange={e => setFormData({ ...formData, username: e.target.value })} />
-              <input type="email" placeholder="Email" required className="w-full p-2 border rounded" onChange={e => setFormData({ ...formData, email: e.target.value })} />
-              <input type="text" placeholder="Phone" className="w-full p-2 border rounded" onChange={e => setFormData({ ...formData, phone: e.target.value })} />
-              {/* Role is hidden because it's always 'doctor' for this form */}
-              <input type="password" placeholder="Password" required className="w-full p-2 border rounded" onChange={e => setFormData({ ...formData, password_hash: e.target.value })} />
-              <input type="password" placeholder="Repeat Password" required className="w-full p-2 border rounded" onChange={e => setFormData({ ...formData, confirm_password: e.target.value })} />
+            <div className="space-y-3 border-r pr-4">
+              <p className="text-xs font-bold text-gray-500 uppercase">Account Information</p>
+              <input type="text" placeholder="Full Name" required className="w-full p-2 border rounded" onChange={set('full_name')} />
+              <input type="text" placeholder="Username" required className="w-full p-2 border rounded" onChange={set('username')} />
+              <input type="email" placeholder="Email" required className="w-full p-2 border rounded" onChange={set('email')} />
+              <input type="text" placeholder="Phone" className="w-full p-2 border rounded" onChange={set('phone')} />
+              <input type="password" placeholder="Password" required className="w-full p-2 border rounded" onChange={set('password_hash')} />
+              <input type="password" placeholder="Confirm Password" required className="w-full p-2 border rounded" onChange={set('confirm_password')} />
             </div>
-
-            {/* --- DOCTORS TABLE FIELDS --- */}
-            <div className="space-y-4">
-              <p className="text-xs font-bold text-blue-600 uppercase">Doctors Table Data</p>
-              <input type="text" placeholder="Specialization" required className="w-full p-2 border rounded" onChange={e => setFormData({ ...formData, specialization: e.target.value })} />
-              <textarea placeholder="Availability Schedule" className="w-full p-2 border rounded" onChange={e => setFormData({ ...formData, availability_schedule: e.target.value })} />
-              <input type="number" placeholder="Initial Feedback Score" className="w-full p-2 border rounded" value={formData.feedback_score} onChange={e => setFormData({ ...formData, feedback_score: e.target.value })} />
+            <div className="space-y-3">
+              <p className="text-xs font-bold text-gray-500 uppercase">Doctor Details</p>
+              <input type="text" placeholder="Specialization" required className="w-full p-2 border rounded" onChange={set('specialization')} />
+              <textarea placeholder="Availability e.g. Mon-Fri 8am-5pm" className="w-full p-2 border rounded h-24" onChange={set('availability_schedule')} />
             </div>
-
-            <div className="md:col-span-2 pt-4">
-              <button type="submit" className="w-full bg-blue-700 text-white py-3 rounded-lg font-bold">
-                Save
+            <div className="md:col-span-2 pt-2">
+              <button type="submit" className="w-full bg-blue-700 text-white py-3 rounded-lg font-bold hover:bg-blue-800">
+                Save Doctor
               </button>
             </div>
           </form>
         </div>
       )}
-
       <Table columns={columns} data={doctors} />
-      {loading && <div className="text-center text-gray-500 mt-4">Loading...</div>}
+      {loading && <div className="text-center text-gray-500 mt-4 animate-pulse">Loading...</div>}
     </Layout>
   );
-} 
+}
